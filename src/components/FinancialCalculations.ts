@@ -1,4 +1,5 @@
 import { SimulationData, CalculationResults, ScheduleRow } from '../App';
+import {BBPCalc, TipoDeVivienda} from "../domain/BBPCalc";
 
 export function calculateFinancialMetrics(data: SimulationData): CalculationResults {
   // Calcular valores básicos
@@ -9,7 +10,8 @@ export function calculateFinancialMetrics(data: SimulationData): CalculationResu
   const financedAmountBeforeBBP = data.propertyPrice - downPaymentAmount;
   
   // Calcular BBP (Bono Buen Pagador) - simulamos el cálculo
-  const bbp = calculateBBP(financedAmountBeforeBBP, data.currency);
+  //const bbp = calculateBBP(financedAmountBeforeBBP, data.currency);
+  const bbp = calculateBBP(data.propertyPrice, data.currency, data);
   const financedAmount = financedAmountBeforeBBP - bbp;
 
   // Convertir tasa a mensual
@@ -46,12 +48,44 @@ export function calculateFinancialMetrics(data: SimulationData): CalculationResu
     schedule
   };
 }
-
+/* Version anterior
 function calculateBBP(financedAmount: number, currency: string): number {
+
   // Bono Buen Pagador - máximo 25,500 PEN o equivalente en USD
   const maxBBP = currency === 'PEN' ? 25500 : 7000; // Aproximado USD
   const bbpPercentage = 0.05; // 5% del monto financiado
   return Math.min(financedAmount * bbpPercentage, maxBBP);
+}*/
+
+function calculateBBP(
+    propertyPrice: number,  // Cambiar: usar propertyPrice, no financedAmount
+    currency: 'PEN' | 'USD',
+    data: SimulationData  // Pasar todo el objeto para acceder a los nuevos campos
+): number {
+    // Valores por defecto si no se proporcionan
+    const tipoVivienda = data.tipoVivienda === 'Tradicional'
+        ? TipoDeVivienda.Sostenible
+        : TipoDeVivienda.Tradicional;
+
+    const ingresos = data.ingresos || 2000;
+    const adultoMayor = data.adultoMayor || true;
+    const personaDesplazada = data.personaDesplazada || true;
+    const migrantesRetornados = data.migrantesRetornados || false;
+    const personaConDiscapacidad = data.personaConDiscapacidad || true;
+
+    // Crear instancia de BBPCalc
+    const bbpCalc = new BBPCalc(
+        propertyPrice,
+        tipoVivienda,
+        ingresos,
+        adultoMayor,
+        personaDesplazada,
+        migrantesRetornados,
+        personaConDiscapacidad
+    );
+
+    // Calcular y retornar el bono
+    return bbpCalc.CalculoDeBono();
 }
 
 function calculateMonthlyRate(rate: number, rateType: string, capitalizationsPerYear?: number): number {

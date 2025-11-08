@@ -20,6 +20,14 @@ export type SimulationData = {
   gracePeriodMonths: number;
   insuranceAndFees: number;
   bbp?: number;
+
+    // Nuevos campos para BBPCalc
+    tipoVivienda?: 'Tradicional' | 'Sostenible';  // Por defecto 'Tradicional'
+    ingresos?: number;  // Ingresos del usuario
+    adultoMayor?: boolean;
+    personaDesplazada?: boolean;
+    migrantesRetornados?: boolean;
+    personaConDiscapacidad?: boolean;
 };
 
 export type CalculationResults = {

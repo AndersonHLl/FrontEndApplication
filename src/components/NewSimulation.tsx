@@ -8,6 +8,7 @@ import { Separator } from './ui/separator';
 import { Calculator } from 'lucide-react';
 import { SimulationData, CalculationResults } from '../App';
 import { calculateFinancialMetrics } from './FinancialCalculations';
+import {BBPCalc, TipoDeVivienda} from "../domain/BBPCalc";
 
 interface NewSimulationProps {
   onSubmit: (data: SimulationData, results: CalculationResults) => void;
@@ -40,9 +41,33 @@ export function NewSimulation({ onSubmit }: NewSimulationProps) {
       : formData.downPayment;
     
     const financedAmountBeforeBBP = formData.propertyPrice - downPaymentAmount;
+    /*
     const maxBBP = formData.currency === 'PEN' ? 25500 : 7000;
     const bbp = Math.min(financedAmountBeforeBBP * 0.05, maxBBP);
-    const financedAmount = financedAmountBeforeBBP - bbp;
+    const financedAmount = financedAmountBeforeBBP - bbp;*/
+      // Usar BBPCalc para calcular el BBP correcto
+      const tipoVivienda = (formData.tipoVivienda === 'Tradicional' || !formData.tipoVivienda)
+          ? TipoDeVivienda.Sostenible
+          : TipoDeVivienda.Tradicional;
+
+      const ingresos = formData.ingresos || 2000;
+      const adultoMayor = formData.adultoMayor || true;
+      const personaDesplazada = formData.personaDesplazada || true;
+      const migrantesRetornados = formData.migrantesRetornados || false;
+      const personaConDiscapacidad = formData.personaConDiscapacidad || false;
+
+      const bbpCalc = new BBPCalc(
+          formData.propertyPrice,  // Usar propertyPrice, no financedAmountBeforeBBP
+          tipoVivienda,
+          ingresos,
+          adultoMayor,
+          personaDesplazada,
+          migrantesRetornados,
+          personaConDiscapacidad
+      );
+
+      const bbp = bbpCalc.CalculoDeBono();
+      const financedAmount = financedAmountBeforeBBP - bbp;
 
     let monthlyRate: number;
     if (formData.rateType === 'TEA') {
