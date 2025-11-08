@@ -72,3 +72,8 @@ out
 
 # Supabase
 .supabase
+
+# Temporary files
+*.tmp
+*.temp
+*.log

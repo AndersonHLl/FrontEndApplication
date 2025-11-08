@@ -95,7 +95,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation 
-        currentView={currentView}
+        currentView={currentView as 'simulation' | 'results' | 'compare' | 'history'}
         onNavigate={setCurrentView}
         user={user}
         onLogout={handleLogout}
