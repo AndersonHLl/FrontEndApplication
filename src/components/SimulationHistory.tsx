@@ -1,0 +1,236 @@
+import { useState, useEffect } from 'react';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Badge } from './ui/badge';
+import { Alert, AlertDescription } from './ui/alert';
+import { Loader2, Eye, Trash2, AlertCircle, Clock, DollarSign } from 'lucide-react';
+import { getUserSimulations, deleteSimulation, SavedSimulation } from '../utils/supabase/client';
+import { SimulationData, CalculationResults } from '../App';
+
+interface SimulationHistoryProps {
+  userEmail: string;
+  onLoadSimulation: (data: SimulationData, results: CalculationResults) => void;
+}
+
+export function SimulationHistory({ userEmail, onLoadSimulation }: SimulationHistoryProps) {
+  const [simulations, setSimulations] = useState<SavedSimulation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSimulations();
+  }, [userEmail]);
+
+  const loadSimulations = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const userSimulations = await getUserSimulations(userEmail);
+      setSimulations(userSimulations);
+    } catch (error) {
+      setError('Error al cargar el historial de simulaciones');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (simulationId: string) => {
+    if (!confirm('¿Está seguro de que desea eliminar esta simulación?')) {
+      return;
+    }
+
+    setDeletingId(simulationId);
+    try {
+      const success = await deleteSimulation(simulationId);
+      if (success) {
+        setSimulations(simulations.filter(sim => sim.id !== simulationId));
+      } else {
+        setError('Error al eliminar la simulación');
+      }
+    } catch (error) {
+      setError('Error al eliminar la simulación');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleLoad = (simulation: SavedSimulation) => {
+    onLoadSimulation(simulation.simulation_data, simulation.results);
+  };
+
+  const formatCurrency = (amount: number, currency: string) => {
+    const symbol = currency === 'PEN' ? 'S/' : '$';
+    return `${symbol}${amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-PE', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin mr-2" />
+          <span>Cargando historial...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-6">
+        <h1>Historial de Simulaciones</h1>
+        <p className="text-muted-foreground mt-2">
+          Revise y gestione sus simulaciones guardadas
+        </p>
+      </div>
+
+      {error && (
+        <Alert className="mb-6" variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {simulations.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Clock className="w-12 h-12 text-muted-foreground mb-4" />
+            <h3>No hay simulaciones guardadas</h3>
+            <p className="text-muted-foreground text-center mt-2">
+              Realice una nueva simulación y guárdela para verla en su historial
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Simulaciones Guardadas</CardTitle>
+            <CardDescription>
+              {simulations.length} simulación{simulations.length !== 1 ? 'es' : ''} encontrada{simulations.length !== 1 ? 's' : ''}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead className="text-right">Precio Vivienda</TableHead>
+                  <TableHead className="text-right">Cuota Mensual</TableHead>
+                  <TableHead className="text-right">TCEA</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {simulations.map((simulation) => (
+                  <TableRow key={simulation.id}>
+                    <TableCell className="font-medium">
+                      {simulation.name}
+                    </TableCell>
+                    <TableCell>
+                      {formatDate(simulation.created_at)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(simulation.simulation_data.propertyPrice, simulation.simulation_data.currency)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(simulation.results.monthlyPayment, simulation.simulation_data.currency)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {simulation.results.tcea.toFixed(2)}%
+                    </TableCell>
+                    <TableCell>
+                      {simulation.is_base_scenario ? (
+                        <Badge variant="secondary">Base</Badge>
+                      ) : (
+                        <Badge variant="outline">Normal</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleLoad(simulation)}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="w-3 h-3" />
+                          Ver
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(simulation.id)}
+                          disabled={deletingId === simulation.id}
+                          className="flex items-center gap-1 hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          {deletingId === simulation.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3 h-3" />
+                          )}
+                          Eliminar
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Resumen estadístico */}
+      {simulations.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Simulaciones</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{simulations.length}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Promedio TCEA</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {(simulations.reduce((sum, sim) => sum + sim.results.tcea, 0) / simulations.length).toFixed(2)}%
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Escenarios Base</CardTitle>
+              <Badge className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {simulations.filter(sim => sim.is_base_scenario).length}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
