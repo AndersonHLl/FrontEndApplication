@@ -46,13 +46,13 @@ export function NewSimulation({ onSubmit }: NewSimulationProps) {
     const bbp = Math.min(financedAmountBeforeBBP * 0.05, maxBBP);
     const financedAmount = financedAmountBeforeBBP - bbp;*/
       // Usar BBPCalc para calcular el BBP correcto
-      const tipoVivienda = (formData.tipoVivienda === 'Tradicional' || !formData.tipoVivienda)
+      const tipoVivienda = (formData.tipoVivienda === 'Sostenible')
           ? TipoDeVivienda.Sostenible
-          : TipoDeVivienda.Tradicional;
+          : TipoDeVivienda.Tradicional;  // Por defecto Tradicional
 
-      const ingresos = formData.ingresos || 2000;
-      const adultoMayor = formData.adultoMayor || true;
-      const personaDesplazada = formData.personaDesplazada || true;
+      const ingresos = formData.ingresos || 5000;  // Valor fuera del rango del integrador (<= 4746)
+      const adultoMayor = formData.adultoMayor || false;
+      const personaDesplazada = formData.personaDesplazada || false;
       const migrantesRetornados = formData.migrantesRetornados || false;
       const personaConDiscapacidad = formData.personaConDiscapacidad || false;
 

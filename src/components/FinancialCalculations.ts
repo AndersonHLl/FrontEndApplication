@@ -63,15 +63,15 @@ function calculateBBP(
     data: SimulationData  // Pasar todo el objeto para acceder a los nuevos campos
 ): number {
     // Valores por defecto si no se proporcionan
-    const tipoVivienda = data.tipoVivienda === 'Tradicional'
+    const tipoVivienda = data.tipoVivienda === 'Sostenible'
         ? TipoDeVivienda.Sostenible
-        : TipoDeVivienda.Tradicional;
+        : TipoDeVivienda.Tradicional;  // Por defecto Tradicional
 
-    const ingresos = data.ingresos || 2000;
-    const adultoMayor = data.adultoMayor || true;
-    const personaDesplazada = data.personaDesplazada || true;
+    const ingresos = data.ingresos || 5000;  // Valor fuera del rango del integrador (<= 4746)
+    const adultoMayor = data.adultoMayor || false;
+    const personaDesplazada = data.personaDesplazada || false;
     const migrantesRetornados = data.migrantesRetornados || false;
-    const personaConDiscapacidad = data.personaConDiscapacidad || true;
+    const personaConDiscapacidad = data.personaConDiscapacidad || false;
 
     // Crear instancia de BBPCalc
     const bbpCalc = new BBPCalc(
