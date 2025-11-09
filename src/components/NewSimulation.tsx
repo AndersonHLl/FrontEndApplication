@@ -151,6 +151,22 @@ export function NewSimulation({ onSubmit }: NewSimulationProps) {
                   </div>
                 </div>
 
+                  <div className="space-y-2">
+                      <Label htmlFor="tipoVivienda">Tipo de vivienda</Label>
+                      <Select
+                          value={formData.tipoVivienda || 'Tradicional'}
+                          onValueChange={(value: 'Tradicional' | 'Sostenible') => updateFormData({ tipoVivienda: value })}
+                      >
+                          <SelectTrigger>
+                              <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="Tradicional">Tradicional</SelectItem>
+                              <SelectItem value="Sostenible">Sostenible</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="downPayment">Cuota inicial</Label>
