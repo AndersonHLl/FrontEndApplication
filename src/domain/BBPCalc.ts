@@ -19,6 +19,7 @@ export class BBPCalc {
     private personaDesplazada: boolean;
     private migrantesRetornados: boolean;
     private personaConDiscapacidad: boolean;
+    private currency: string;
 
 
     private calcularRango(): RangosDeVivienda {
@@ -75,7 +76,7 @@ export class BBPCalc {
         return this.ingresos <= 4746 || this.adultoMayor || this.personaDesplazada || this.migrantesRetornados || this.personaConDiscapacidad;
     }
 
-    public constructor(valorVivienda: number, tipoDeVivienda: TipoDeVivienda, ingresos: number, adultoMayor: boolean, personaDesplazada: boolean, migrantesRetornados: boolean, personaConDiscapacidad: boolean) {
+    public constructor(valorVivienda: number, tipoDeVivienda: TipoDeVivienda, ingresos: number, adultoMayor: boolean, personaDesplazada: boolean, migrantesRetornados: boolean, personaConDiscapacidad: boolean, currency: string) {
         this.valorVivienda = valorVivienda;
         this.tipoDeVivienda = tipoDeVivienda;
         this.ingresos = ingresos;
@@ -83,6 +84,7 @@ export class BBPCalc {
         this.personaDesplazada = personaDesplazada;
         this.migrantesRetornados = migrantesRetornados;
         this.personaConDiscapacidad = personaConDiscapacidad;
+        this.currency = currency
 
         this.rango = this.calcularRango();
         this._valorDelBono = this.valorDelBono(this.tipoDeVivienda);
