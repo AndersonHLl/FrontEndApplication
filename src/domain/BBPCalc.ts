@@ -21,15 +21,22 @@ export class BBPCalc {
     private personaConDiscapacidad: boolean;
     private currency: string;
 
+    private fromPENtoUSD(value: number){
+
+    }
+
 
     private calcularRango(): RangosDeVivienda {
-        const rangos = [
+        let rangos = [
             { min: 68800, max: 98100, rango: RangosDeVivienda.R1 },
             { min: 98101, max: 146900, rango: RangosDeVivienda.R2 },
             { min: 146901, max: 244600, rango: RangosDeVivienda.R3 },
             { min: 244601, max: 362100, rango: RangosDeVivienda.R4 },
             { min: 362101, max: 488800, rango: RangosDeVivienda.R5 }
         ];
+        if (this.currency == 'USD'){
+            rangos.forEach(val => val.min = );
+        }
         const rangoEncontrado = rangos.find(r => this.valorVivienda >= r.min && this.valorVivienda <= r.max);
         if (!rangoEncontrado) {
             console.warn('[BBPCalc] ⚠️ Valor fuera de rango, usando R5 por defecto');
