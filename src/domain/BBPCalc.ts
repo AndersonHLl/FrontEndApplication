@@ -11,28 +11,33 @@ export enum TipoDeVivienda {
     Sostenible
 }
 
-interface TipoCambioResponse {
-    buy_price: string;
-    sell_price: string;
-    base_currency: string;
-    quote_currency: string;
-    date: string;
+interface TipoCambioResponseDolarPe {
+    range: {
+        from: string;
+        to: string;
+        max_days: number;
+    };
+    series: {
+        'USD-PEN': {
+            labels: string[];
+            data: number[];
+        };
+    };
 }
 
 export class currencySwitch {
-    private static readonly API_KEY = process.env.API_KEY_DECOLECTA;
-    private static readonly API_URL = 'https://api.decolecta.com/v1/tipo-cambio/sbs/average';
+    private static readonly API_BASE_URL = 'https://dolar.pe/api/public/series';
     
     /**
-     * Obtiene la tasa de cambio promedio de SBS desde la API de Decolecta
-     * @returns Promise<number> - Tasa de cambio promedio (promedio entre compra y venta)
+     * Obtiene la tasa de cambio promedio de SBS desde la API de Dólar.pe
+     * @returns Promise<number> - Tasa de cambio promedio
      */
     public static async obtenerTasaDeCambioSBS(): Promise<number> {
         try {
-            const response = await fetch(this.API_URL, {
+            const url = `${this.API_BASE_URL}?pair=USD-PEN`;
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${this.API_KEY}`,
                     'Accept': 'application/json'
                 }
             });
@@ -41,21 +46,23 @@ export class currencySwitch {
                 throw new Error(`Error al obtener tasa de cambio: ${response.status} ${response.statusText}`);
             }
 
-            const data: TipoCambioResponse = await response.json();
+            const data: TipoCambioResponseDolarPe = await response.json();
             
-            // Calcular promedio entre precio de compra y venta
-            const buyPrice = parseFloat(data.buy_price);
-            const sellPrice = parseFloat(data.sell_price);
-            const promedio = (buyPrice + sellPrice) / 2;
+            // Obtener el último valor de la serie (más reciente)
+            const serie = data.series['USD-PEN'];
+            if (!serie || !serie.data || serie.data.length === 0) {
+                throw new Error('No se encontraron datos en la respuesta');
+            }
             
-            console.log('[currencySwitch] Tasa de cambio obtenida:', {
-                buy_price: buyPrice,
-                sell_price: sellPrice,
-                promedio: promedio,
-                fecha: data.date
+            const tasaCambio = serie.data[serie.data.length - 1];
+            const fecha = serie.labels[serie.labels.length - 1];
+            
+            console.log('[currencySwitch] Tasa de cambio obtenida desde Dólar.pe:', {
+                tasa: tasaCambio,
+                fecha: fecha
             });
             
-            return promedio;
+            return tasaCambio;
             
         } catch (error) {
             console.error('[currencySwitch] Error al obtener tasa de cambio:', error);
@@ -65,56 +72,20 @@ export class currencySwitch {
     
     /**
      * Obtiene la tasa de cambio de compra (para convertir PEN a USD)
+     * Usa el mismo valor que devuelve Dólar.pe (tipo de cambio oficial SBS)
      * @returns Promise<number> - Tasa de cambio de compra
      */
     public static async obtenerTasaCompra(): Promise<number> {
-        try {
-            const response = await fetch(this.API_URL, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${this.API_KEY}`,
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Error al obtener tasa de cambio: ${response.status} ${response.statusText}`);
-            }
-
-            const data: TipoCambioResponse = await response.json();
-            return parseFloat(data.buy_price);
-            
-        } catch (error) {
-            console.error('[currencySwitch] Error al obtener tasa de compra:', error);
-            throw new Error('No se pudo obtener la tasa de cambio de compra');
-        }
+        return await this.obtenerTasaDeCambioSBS();
     }
     
     /**
      * Obtiene la tasa de cambio de venta (para convertir USD a PEN)
+     * Usa el mismo valor que devuelve Dólar.pe (tipo de cambio oficial SBS)
      * @returns Promise<number> - Tasa de cambio de venta
      */
     public static async obtenerTasaVenta(): Promise<number> {
-        try {
-            const response = await fetch(this.API_URL, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${this.API_KEY}`,
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Error al obtener tasa de cambio: ${response.status} ${response.statusText}`);
-            }
-
-            const data: TipoCambioResponse = await response.json();
-            return parseFloat(data.sell_price);
-            
-        } catch (error) {
-            console.error('[currencySwitch] Error al obtener tasa de venta:', error);
-            throw new Error('No se pudo obtener la tasa de cambio de venta');
-        }
+        return await this.obtenerTasaDeCambioSBS();
     }
     
     /**
@@ -163,6 +134,8 @@ export class BBPCalc {
                 rango.max = rango.max / this.tasaCompra;
             });
         }
+        console.log('[BBPCalc] Rangos de vivienda:', rangos);
+        console.log('[BBPCalc] Valor de vivienda:', this.valorVivienda);
         const rangoEncontrado = rangos.find(r => this.valorVivienda >= r.min && this.valorVivienda <= r.max);
         if (!rangoEncontrado) {
             console.warn('[BBPCalc] ⚠️ Valor fuera de rango, usando R5 por defecto');
